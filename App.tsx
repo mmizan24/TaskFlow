@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Layout, Search, CheckCircle, Clock, Circle } from 'lucide-react';
+import { Plus, Layout, Search, CheckCircle, Trash2 } from 'lucide-react';
 import { Task, TaskStatus, TaskPriority } from './types';
 import { MOCK_TASKS, STATUS_CONFIG, PRIORITY_CONFIG } from './constants';
 import { TaskSidebar } from './components/TaskSidebar';
@@ -31,17 +31,24 @@ function App() {
       priority: TaskPriority.MEDIUM,
       createdAt: Date.now(),
     };
-    setTasks([newTask, ...tasks]);
+    // Use functional update to ensure we have the latest state
+    setTasks(prev => [newTask, ...prev]);
     setSelectedTaskId(newTask.id);
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
-    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t));
+    // Use functional update to prevent stale state closures during rapid edits
+    setTasks(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t));
   };
 
   const handleDeleteTask = (taskId: string) => {
-    setTasks(tasks.filter(t => t.id !== taskId));
-    if (selectedTaskId === taskId) setSelectedTaskId(null);
+    if (window.confirm('Are you sure you want to delete this task?')) {
+      setTasks(prev => prev.filter(t => t.id !== taskId));
+      // If the deleted task was currently open, close the sidebar
+      if (selectedTaskId === taskId) {
+        setSelectedTaskId(null);
+      }
+    }
   };
 
   const getStatusIcon = (status: TaskStatus) => {
@@ -127,6 +134,21 @@ function App() {
                     selectedTaskId === task.id ? 'ring-2 ring-blue-500/50 bg-slate-800 border-slate-700' : ''
                   }`}
                 >
+                  {/* Quick Delete Button */}
+                  <div className="absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTask(task.id);
+                      }}
+                      className="p-2 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      title="Delete Task"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1 min-w-0">
                       <div className="mt-1">
@@ -173,7 +195,11 @@ function App() {
         isOpen={!!selectedTaskId}
         onClose={() => setSelectedTaskId(null)}
         onUpdate={handleUpdateTask}
-        onDelete={handleDeleteTask}
+        onDelete={(id) => {
+          // Simplified callback for Sidebar that assumes confirmation happens inside Sidebar or here
+          setTasks(prev => prev.filter(t => t.id !== id));
+          setSelectedTaskId(null);
+        }}
       />
 
     </div>
