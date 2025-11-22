@@ -1,0 +1,5 @@
+{
+  "name": "TaskFlow AI Monitor",
+  "description": "A modern task monitoring application with a split-view interface. Create tasks, manage priorities, and use the integrated Gemini AI to enhance your notes and generate subtasks.",
+  "requestFramePermissions": []
+}
